@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import yt_dlp
 
-def download_video(url_entry):
+def download_video(url_entry, audio_only_var):
     url = url_entry.get()
     save_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
@@ -12,11 +12,31 @@ def download_video(url_entry):
         return
 
     try:
-        ydl_opts = {
-            'outtmpl': os.path.join(save_path, '%(title)s.mp4'),  # Force .mp4 extension
-            'format': 'bestvideo+bestaudio/best',
-            'merge_output_format': 'mp4',
-        }
+        if audio_only_var.get():
+            ydl_opts = {
+                'outtmpl': os.path.join(save_path, '%(title)s.mp3'),  # Force .mp3 extension
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+        else:
+            ydl_opts = {
+                'outtmpl': os.path.join(save_path, '%(title)s.mp4'),  # Force .mp4 extension
+                'format': 'bestvideo+bestaudio',  # Download both video and audio
+                'merge_output_format': 'mp4',    # Merge into an MP4 file
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                }, {
+                    'key': 'FFmpegMetadata',  # Ensure audio is AAC
+                }, {
+                    'key': 'FFmpegEmbedSubtitle',  # Handle subtitles if available
+                }],
+            }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         messagebox.showinfo("Success", f"Video downloaded successfully to {save_path}")
@@ -26,7 +46,7 @@ def download_video(url_entry):
 def main():
     root = tk.Tk()
     root.title("YouTube Video Downloader")
-    root.geometry("500x200")
+    root.geometry("500x250")
 
     # URL label and entry
     url_label = tk.Label(root, text="YouTube URL:")
@@ -34,8 +54,13 @@ def main():
     url_entry = tk.Entry(root, width=50)
     url_entry.pack(pady=10)
 
+    # Audio-only checkbox
+    audio_only_var = tk.BooleanVar()
+    audio_only_checkbox = tk.Checkbutton(root, text="Download audio only (MP3)", variable=audio_only_var)
+    audio_only_checkbox.pack(pady=10)
+
     # Download button
-    download_button = tk.Button(root, text="Download", command=lambda: download_video(url_entry))
+    download_button = tk.Button(root, text="Download", command=lambda: download_video(url_entry, audio_only_var))
     download_button.pack(pady=20)
 
     root.mainloop()
