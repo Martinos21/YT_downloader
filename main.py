@@ -47,6 +47,7 @@ def main():
     root = tk.Tk()
     root.title("YouTube Video Downloader")
     root.geometry("500x250")
+    root.configure(bg="#CECECE")
 
     # URL label and entry
     url_label = tk.Label(root, text="YouTube URL:")
